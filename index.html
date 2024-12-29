@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPTV Player</title>
+  <title>Gerar M3U IPTV</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -16,118 +16,89 @@
     }
     header {
       background-color: #007bff;
-      color: #fff;
+      color: white;
       padding: 1rem;
       width: 100%;
       text-align: center;
     }
-    main {
-      margin: 2rem;
+    form {
+      margin-top: 2rem;
       width: 90%;
-      max-width: 800px;
-    }
-    .channel {
-      display: flex;
-      align-items: center;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background-color: #fff;
-      transition: transform 0.2s;
-    }
-    .channel:hover {
-      transform: scale(1.02);
-    }
-    .channel img {
-      width: 80px;
-      height: 80px;
-      margin-right: 1rem;
-      border-radius: 8px;
-    }
-    .channel-info {
+      max-width: 400px;
       display: flex;
       flex-direction: column;
+      gap: 1rem;
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    .channel-info h3 {
-      margin: 0;
-      font-size: 1.2rem;
+    label {
+      font-weight: bold;
     }
-    .channel-info p {
-      margin: 0.2rem 0;
-      color: #555;
+    input {
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
     }
-    .channel-info button {
-      margin-top: 0.5rem;
-      padding: 0.5rem 1rem;
+    button {
+      padding: 0.7rem;
       background-color: #007bff;
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
+      font-size: 1rem;
     }
-    .channel-info button:hover {
+    button:hover {
       background-color: #0056b3;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>IPTV Player</h1>
-    <p>Selecione um canal para assistir</p>
+    <h1>Gerador de M3U IPTV</h1>
+    <p>Insira os dados abaixo para gerar seu arquivo M3U</p>
   </header>
-  <main id="channel-list">
-    <!-- Os canais serão adicionados aqui dinamicamente -->
-  </main>
+  <form id="iptv-form">
+    <label for="dns">DNS</label>
+    <input type="text" id="dns" placeholder="Digite o DNS" required>
+    
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="Digite o Username" required>
+    
+    <label for="password">Password</label>
+    <input type="text" id="password" placeholder="Digite o Password" required>
+    
+    <button type="submit">Baixar M3U</button>
+  </form>
 
   <script>
-    // Dados IPTV
-    const channels = [
-      {
-        id: "aande",
-        name: "A&E FHD",
-        logo: "https://i.ibb.co/9qdJ6cx/AE.png",
-        url: "http://ntkhz.online:80/981068158/467029405/17574.ts",
-        group: "Filmes e Séries"
-      },
-      {
-        id: "amc",
-        name: "AMC FHD",
-        logo: "https://imgur.com/HDyv8Lj.jpeg",
-        url: "http://ntkhz.online:80/981068158/467029405/113102.ts",
-        group: "Filmes e Séries"
-      },
-      {
-        id: "animalplanet",
-        name: "Animal Planet FHD",
-        logo: "https://1.bp.blogspot.com/-vWgZvQvGbUI/YBxYy6fPSXI/AAAAAAAAJxE/pqvtOqYnbMUi9dRcO2EPgmxxe2v7GjQSACLcBGAsYHQ/s0/Animal%2BPlanet.png",
-        url: "http://ntkhz.online:80/981068158/467029405/17580.ts",
-        group: "Documentários"
+    document.getElementById("iptv-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      // Captura os valores inseridos
+      const dns = document.getElementById("dns").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      // Validação básica
+      if (!dns || !username || !password) {
+        alert("Por favor, preencha todos os campos.");
+        return;
       }
-    ];
 
-    // Função para criar os cards de canais
-    const channelList = document.getElementById("channel-list");
-    channels.forEach(channel => {
-      const channelCard = document.createElement("div");
-      channelCard.classList.add("channel");
+      // Constrói a URL do M3U
+      const m3uUrl = `${dns}/get.php?username=${username}&password=${password}&type=m3u&output=ts`;
 
-      channelCard.innerHTML = `
-        <img src="${channel.logo}" alt="${channel.name}">
-        <div class="channel-info">
-          <h3>${channel.name}</h3>
-          <p>Grupo: ${channel.group}</p>
-          <button onclick="playChannel('${channel.url}')">Assistir</button>
-        </div>
-      `;
-
-      channelList.appendChild(channelCard);
+      // Cria um link para download
+      const link = document.createElement("a");
+      link.href = m3uUrl;
+      link.download = "lista.m3u";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     });
-
-    // Função para reproduzir o canal
-    function playChannel(url) {
-      window.open(url, "_blank");
-    }
   </script>
 </body>
 </html>
