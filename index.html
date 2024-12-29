@@ -1,142 +1,124 @@
-// Simulação de um web player estilo SmartersPro para IPTV
-// Este script requer um ambiente backend para trabalhar corretamente com requisições HTTP.
-
-defineExpressServer();
-
-function defineExpressServer() {
-    const express = require('express');
-    const app = express();
-    const request = require('request');
-
-    // Rota para gerar o arquivo M3U com base em credenciais dinâmicas
-    app.get('/iptv', (req, res) => {
-        const { dns, username, password } = req.query;
-
-        if (!dns || !username || !password) {
-            return res.status(400).json({ error: 'Faltam parâmetros: dns, username e password são obrigatórios.' });
-        }
-
-        const m3uUrl = `${dns}/get.php?username=${username}&password=${password}&type=m3u_plus&output=mpegts`;
-
-        request(m3uUrl, (error, response, body) => {
-            if (error || response.statusCode !== 200) {
-                return res.status(500).json({ error: 'Erro ao obter a lista M3U.' });
-            }
-
-            res.send(body);
-        });
-    });
-
-    // Inicia o servidor
-    const PORT = 3000;
-    app.listen(PORT, () => {
-        console.log(`Servidor rodando em http://localhost:${PORT}`);
-    });
-}
-
-// Interface do Frontend - Web Player HTML com integração HLS e sistema de escolha de canais
-const htmlFrontend = `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV Player - SmartersPro</title>
+    <title>IPTV Downloader</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #000;
-            color: #fff;
+            background-color: #f4f4f4;
             margin: 0;
+            padding: 0;
         }
-        video {
-            max-width: 100%;
-            height: auto;
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
-        .controls {
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .output {
             margin-top: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <h1>IPTV Player</h1>
-    <div class="controls">
-        <input type="text" id="dns" placeholder="DNS" required>
-        <input type="text" id="username" placeholder="Username" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button onclick="loadPlaylist()">Carregar</button>
-    </div>
-    <select id="channelList" onchange="changeChannel()" style="width: 80%; margin: 20px 0; display: none;"></select>
-    <video id="videoPlayer" controls autoplay></video>
+    <div class="container">
+        <h1>IPTV Downloader</h1>
+        <label for="dns">DNS</label>
+        <input type="text" id="dns" placeholder="Digite o DNS (ex: http://gdtkz.online:80)">
 
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Digite o Username">
+
+        <label for="password">Password</label>
+        <input type="text" id="password" placeholder="Digite o Password">
+
+        <button id="downloadBtn">Baixar e Processar</button>
+
+        <div class="output" id="output" style="display: none;">
+            <h3>Resultado:</h3>
+            <ul id="channelsList"></ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-        async function loadPlaylist() {
+        const downloadBtn = document.getElementById('downloadBtn');
+        const output = document.getElementById('output');
+        const channelsList = document.getElementById('channelsList');
+
+        downloadBtn.addEventListener('click', async () => {
             const dns = document.getElementById('dns').value;
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
             if (!dns || !username || !password) {
-                alert('Preencha os campos de DNS, Username e Password.');
+                alert('Por favor, preencha todos os campos!');
                 return;
             }
 
-            const response = await fetch(`/iptv?dns=${encodeURIComponent(dns)}&username=${username}&password=${password}`);
-            if (!response.ok) {
-                alert('Erro ao carregar a lista M3U.');
-                return;
+            try {
+                // Fazendo a requisição para o backend
+                const response = await axios.post('http://localhost:3000/get-iptv', {
+                    dns,
+                    username,
+                    password
+                });
+
+                const channels = response.data.channels;
+
+                // Exibindo os resultados
+                channelsList.innerHTML = '';
+                channels.forEach(channel => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <strong>${channel.info}</strong><br>
+                        <a href="${channel.url}" target="_blank">${channel.url}</a>
+                    `;
+                    channelsList.appendChild(li);
+                });
+
+                output.style.display = 'block';
+            } catch (error) {
+                console.error(error);
+                alert('Erro ao processar os dados. Verifique as informações ou tente novamente mais tarde.');
             }
-
-            const playlist = await response.text();
-            parsePlaylist(playlist);
-        }
-
-        function parsePlaylist(m3uContent) {
-            const channelList = document.getElementById('channelList');
-            const lines = m3uContent.split('\n');
-            const channels = [];
-
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].startsWith('#EXTINF')) {
-                    const name = lines[i].split(',')[1].trim();
-                    const url = lines[i + 1]?.trim();
-                    if (url) {
-                        channels.push({ name, url });
-                    }
-                }
-            }
-
-            channelList.innerHTML = channels.map((channel, index) => 
-                `<option value="${channel.url}">${index + 1}. ${channel.name}</option>`
-            ).join('');
-
-            channelList.style.display = 'block';
-            playChannel(channels[0]?.url);
-        }
-
-        function changeChannel() {
-            const channelList = document.getElementById('channelList');
-            const url = channelList.value;
-            playChannel(url);
-        }
-
-        function playChannel(url) {
-            const videoPlayer = document.getElementById('videoPlayer');
-
-            if (Hls.isSupported()) {
-                const hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(videoPlayer);
-            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                videoPlayer.src = url;
-            } else {
-                alert('Seu navegador não suporta HLS!');
-            }
-        }
+        });
     </script>
 </body>
-</html>`;
-
-module.exports = htmlFrontend;
+</html>
