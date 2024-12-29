@@ -1,124 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV Downloader</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 50px auto;
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .output {
-            margin-top: 20px;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 4px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPTV Player</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f4f4f9;
+    }
+    header {
+      background-color: #007bff;
+      color: #fff;
+      padding: 1rem;
+      width: 100%;
+      text-align: center;
+    }
+    main {
+      margin: 2rem;
+      width: 90%;
+      max-width: 800px;
+    }
+    .channel {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #fff;
+      transition: transform 0.2s;
+    }
+    .channel:hover {
+      transform: scale(1.02);
+    }
+    .channel img {
+      width: 80px;
+      height: 80px;
+      margin-right: 1rem;
+      border-radius: 8px;
+    }
+    .channel-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .channel-info h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    .channel-info p {
+      margin: 0.2rem 0;
+      color: #555;
+    }
+    .channel-info button {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .channel-info button:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>IPTV Downloader</h1>
-        <label for="dns">DNS</label>
-        <input type="text" id="dns" placeholder="Digite o DNS (ex: http://gdtkz.online:80)">
+  <header>
+    <h1>IPTV Player</h1>
+    <p>Selecione um canal para assistir</p>
+  </header>
+  <main id="channel-list">
+    <!-- Os canais serão adicionados aqui dinamicamente -->
+  </main>
 
-        <label for="username">Username</label>
-        <input type="text" id="username" placeholder="Digite o Username">
+  <script>
+    // Dados IPTV
+    const channels = [
+      {
+        id: "aande",
+        name: "A&E FHD",
+        logo: "https://i.ibb.co/9qdJ6cx/AE.png",
+        url: "http://ntkhz.online:80/981068158/467029405/17574.ts",
+        group: "Filmes e Séries"
+      },
+      {
+        id: "amc",
+        name: "AMC FHD",
+        logo: "https://imgur.com/HDyv8Lj.jpeg",
+        url: "http://ntkhz.online:80/981068158/467029405/113102.ts",
+        group: "Filmes e Séries"
+      },
+      {
+        id: "animalplanet",
+        name: "Animal Planet FHD",
+        logo: "https://1.bp.blogspot.com/-vWgZvQvGbUI/YBxYy6fPSXI/AAAAAAAAJxE/pqvtOqYnbMUi9dRcO2EPgmxxe2v7GjQSACLcBGAsYHQ/s0/Animal%2BPlanet.png",
+        url: "http://ntkhz.online:80/981068158/467029405/17580.ts",
+        group: "Documentários"
+      }
+    ];
 
-        <label for="password">Password</label>
-        <input type="text" id="password" placeholder="Digite o Password">
+    // Função para criar os cards de canais
+    const channelList = document.getElementById("channel-list");
+    channels.forEach(channel => {
+      const channelCard = document.createElement("div");
+      channelCard.classList.add("channel");
 
-        <button id="downloadBtn">Baixar e Processar</button>
-
-        <div class="output" id="output" style="display: none;">
-            <h3>Resultado:</h3>
-            <ul id="channelsList"></ul>
+      channelCard.innerHTML = `
+        <img src="${channel.logo}" alt="${channel.name}">
+        <div class="channel-info">
+          <h3>${channel.name}</h3>
+          <p>Grupo: ${channel.group}</p>
+          <button onclick="playChannel('${channel.url}')">Assistir</button>
         </div>
-    </div>
+      `;
 
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script>
-        const downloadBtn = document.getElementById('downloadBtn');
-        const output = document.getElementById('output');
-        const channelsList = document.getElementById('channelsList');
+      channelList.appendChild(channelCard);
+    });
 
-        downloadBtn.addEventListener('click', async () => {
-            const dns = document.getElementById('dns').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            if (!dns || !username || !password) {
-                alert('Por favor, preencha todos os campos!');
-                return;
-            }
-
-            try {
-                // Fazendo a requisição para o backend
-                const response = await axios.post('http://localhost:3000/get-iptv', {
-                    dns,
-                    username,
-                    password
-                });
-
-                const channels = response.data.channels;
-
-                // Exibindo os resultados
-                channelsList.innerHTML = '';
-                channels.forEach(channel => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <strong>${channel.info}</strong><br>
-                        <a href="${channel.url}" target="_blank">${channel.url}</a>
-                    `;
-                    channelsList.appendChild(li);
-                });
-
-                output.style.display = 'block';
-            } catch (error) {
-                console.error(error);
-                alert('Erro ao processar os dados. Verifique as informações ou tente novamente mais tarde.');
-            }
-        });
-    </script>
+    // Função para reproduzir o canal
+    function playChannel(url) {
+      window.open(url, "_blank");
+    }
+  </script>
 </body>
 </html>
